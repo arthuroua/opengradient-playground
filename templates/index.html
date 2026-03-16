@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
 
 <title>OpenGradient AI Playground</title>
@@ -82,7 +81,8 @@ body:JSON.stringify({prompt})
 
 const data = await res.json()
 
-document.getElementById("result").innerText = data.response
+document.getElementById("result").innerText =
+data.response || data.error
 
 }
 
