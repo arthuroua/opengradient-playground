@@ -3,7 +3,9 @@
 
 <head>
 
-<title>OpenGradient AI Terminal</title>
+<title>OpenGradient Neon AI Terminal</title>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
 
 <style>
 
@@ -17,7 +19,7 @@ margin:0;
 .container{
 max-width:900px;
 margin:auto;
-padding:60px;
+padding:50px;
 }
 
 .title{
@@ -37,37 +39,41 @@ border:1px solid #00f2ff;
 border-radius:8px;
 padding:20px;
 font-size:16px;
-outline:none;
 }
 
 button{
-margin-top:20px;
-padding:15px 30px;
-font-size:16px;
+margin-top:15px;
+margin-right:10px;
+padding:12px 22px;
 background:#00f2ff;
 border:none;
 border-radius:6px;
 cursor:pointer;
-box-shadow:0 0 15px #00f2ff;
+box-shadow:0 0 10px #00f2ff;
 }
 
 button:hover{
-box-shadow:0 0 30px #00f2ff;
+box-shadow:0 0 25px #00f2ff;
 }
 
 .result{
-margin-top:40px;
+margin-top:30px;
 background:#0b0f1a;
-padding:30px;
+padding:25px;
 border-radius:10px;
-color:white;
-min-height:120px;
 border:1px solid #00f2ff;
+min-height:120px;
+color:white;
 }
 
 .log{
 margin-top:20px;
+font-size:14px;
 color:#7aa2c9;
+}
+
+.wallet{
+margin-bottom:20px;
 font-size:14px;
 }
 
@@ -83,15 +89,25 @@ font-size:14px;
 OpenGradient Neon AI Terminal
 </div>
 
+<div class="wallet" id="wallet">
+Wallet: not connected
+</div>
+
+<button onclick="connect()">Connect Wallet</button>
+<button onclick="disconnect()">Disconnect</button>
+<button onclick="approve()">Approve OPG</button>
+
+<br><br>
+
 <textarea id="prompt">
 Explain zero knowledge proofs simply
 </textarea>
 
 <br>
 
-<button onclick="connect()">Connect Wallet</button>
-<button onclick="approve()">Approve OPG</button>
 <button onclick="runModel()">Run Model</button>
+<button onclick="copy()">Copy</button>
+<button onclick="clearOutput()">Clear</button>
 
 <div class="result" id="result">
 Model output will appear here...
@@ -105,15 +121,85 @@ Logs...
 
 <script>
 
+let provider
+let signer
+let account
+
+async function connect(){
+
+if(!window.ethereum){
+alert("Install MetaMask")
+return
+}
+
+provider = new ethers.providers.Web3Provider(window.ethereum)
+
+await provider.send("eth_requestAccounts",[])
+
+signer = provider.getSigner()
+
+account = await signer.getAddress()
+
+document.getElementById("wallet").innerText =
+"Wallet: "+account
+
+document.getElementById("log").innerText =
+"Wallet connected"
+
+}
+
+function disconnect(){
+
+account=null
+provider=null
+signer=null
+
+document.getElementById("wallet").innerText=
+"Wallet: disconnected"
+
+document.getElementById("log").innerText=
+"Wallet disconnected"
+
+}
+
+async function approve(){
+
+if(!signer){
+alert("Connect wallet first")
+return
+}
+
+const token = new ethers.Contract(
+"0x240b09731D96979f50B2C649C9CE10FcF9C7987F",
+["function approve(address spender,uint256 amount) public returns(bool)"],
+signer
+)
+
+const spender="0x000000000022D473030F116dDEE9F6B43aC78BA3"
+
+const amount=ethers.utils.parseUnits("1000",18)
+
+document.getElementById("log").innerText="Sending approve..."
+
+const tx=await token.approve(spender,amount)
+
+document.getElementById("log").innerText=
+"Approval TX: "+tx.hash
+
+await tx.wait()
+
+document.getElementById("log").innerText=
+"Approval confirmed"
+
+}
+
 async function runModel(){
 
 document.getElementById("log").innerText="Sending request..."
 
-const prompt = document.getElementById("prompt").value
+const prompt=document.getElementById("prompt").value
 
-try{
-
-const res = await fetch("/chat",{
+const res=await fetch("/chat",{
 method:"POST",
 headers:{
 "Content-Type":"application/json"
@@ -121,72 +207,33 @@ headers:{
 body:JSON.stringify({prompt:prompt})
 })
 
-document.getElementById("log").innerText="Response received"
+const data=await res.json()
 
-const data = await res.json()
-
-document.getElementById("result").innerText =
+document.getElementById("result").innerText=
 data.response || data.error
 
-}
-catch(err){
-
-document.getElementById("log").innerText="Error: "+err
+document.getElementById("log").innerText="Response received"
 
 }
 
-}
-async function approve(){
+function copy(){
 
-if(!window.ethereum){
-alert("Install MetaMask")
-return
-}
+const text=document.getElementById("result").innerText
 
-await ethereum.request({method:'eth_requestAccounts'})
+navigator.clipboard.writeText(text)
 
-const provider = new ethers.providers.Web3Provider(window.ethereum)
-const signer = provider.getSigner()
-
-const token = new ethers.Contract(
-"0x240b09731D96979f50B2C649C9CE10FcF9C7987F",
-[
-"function approve(address spender,uint256 amount) public returns(bool)"
-],
-signer
-)
-
-const spender = "0x000000000022D473030F116dDEE9F6B43aC78BA3"
-
-const amount = ethers.utils.parseUnits("1000",18)
-
-const tx = await token.approve(spender,amount)
-
-document.getElementById("log").innerText =
-"Approval sent: "+tx.hash
-
-await tx.wait()
-
-document.getElementById("log").innerText =
-"Approval confirmed"
-}
-
-  async function connect(){
-
-if(!window.ethereum){
-alert("Install MetaMask")
-return
-}
-
-const accounts = await ethereum.request({
-method:"eth_requestAccounts"
-})
-
-document.getElementById("log").innerText =
-"Connected: "+accounts[0]
+document.getElementById("log").innerText="Copied to clipboard"
 
 }
+
+function clearOutput(){
+
+document.getElementById("result").innerText=""
+document.getElementById("log").innerText="Output cleared"
+
+}
+
 </script>
-<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+
 </body>
 </html>
