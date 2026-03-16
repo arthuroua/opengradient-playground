@@ -91,6 +91,8 @@ Explain zero knowledge proofs simply
 
 <button onclick="runModel()">Run Model</button>
 
+  <button onclick="approve()">Approve OPG</button>
+
 <div class="result" id="result">
 Model output will appear here...
 </div>
@@ -134,8 +136,41 @@ document.getElementById("log").innerText="Error: "+err
 }
 
 }
+async function approve(){
 
+if(!window.ethereum){
+alert("Install MetaMask")
+return
+}
+
+await ethereum.request({method:'eth_requestAccounts'})
+
+const provider = new ethers.providers.Web3Provider(window.ethereum)
+const signer = provider.getSigner()
+
+const token = new ethers.Contract(
+"0x240b09731D96979f50B2C649C9CE10FcF9C7987F",
+[
+"function approve(address spender,uint256 amount) public returns(bool)"
+],
+signer
+)
+
+const spender = "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+
+const amount = ethers.utils.parseUnits("1000",18)
+
+const tx = await token.approve(spender,amount)
+
+document.getElementById("log").innerText =
+"Approval sent: "+tx.hash
+
+await tx.wait()
+
+document.getElementById("log").innerText =
+"Approval confirmed"
+}
 </script>
-
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
 </body>
 </html>
