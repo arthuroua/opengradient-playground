@@ -14,41 +14,29 @@ async def run_llm(prompt):
 
     response = await llm.chat(
         model="Meta-Llama-3-8B-Instruct",
-        messages=[{"role":"user","content":prompt}]
+        messages=[{"role": "user", "content": prompt}]
     )
 
     return response
 
 
-@app.route("/chat", methods=["POST"])
-def chat():
-
-    try:
-
-        data = request.get_json()
-
-        prompt = data.get("prompt","")
-
-        result = asyncio.run(run_llm(prompt))
-
-        return jsonify({
-            "response": str(result)
-        })
-
-    except Exception as e:
-
-        return jsonify({
-            "error": str(e)
-        }), 500
-
-
-@app.route("/")
-def home():
-from flask import render_template
-
 @app.route("/")
 def home():
     return render_template("index.html")
+
+
+@app.route("/chat", methods=["POST"])
+def chat():
+
+    data = request.get_json()
+
+    prompt = data.get("prompt", "")
+
+    result = asyncio.run(run_llm(prompt))
+
+    return jsonify({
+        "response": str(result)
+    })
 
 
 if __name__ == "__main__":
