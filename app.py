@@ -9,6 +9,7 @@ PRIVATE_KEY = os.environ.get("OG_PRIVATE_KEY")
 
 llm = og.LLM(private_key=PRIVATE_KEY)
 
+
 async def run_llm(prompt):
 
     response = await llm.chat(
