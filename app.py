@@ -1,46 +1,158 @@
-from flask import Flask, request, jsonify, render_template
-import asyncio
-import os
-import opengradient as og
+<!DOCTYPE html>
+<html>
 
-app = Flask(__name__)
+<head>
 
-PRIVATE_KEY = os.environ.get("OG_PRIVATE_KEY")
+<title>OpenGradient Intelligence Terminal</title>
 
-llm = og.LLM(private_key=PRIVATE_KEY)
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
 
+<style>
 
-async def run_llm(prompt):
+body{
+background:#04060c;
+color:#00f2ff;
+font-family:monospace;
+margin:0;
+}
 
-    response = await llm.chat(
-        model="meta/Meta-Llama-3-8B-Instruct",
-        messages=[{"role":"user","content":prompt}]
-    )
+.container{
+max-width:1100px;
+margin:auto;
+padding:40px;
+}
 
-    return response["choices"][0]["message"]["content"]
+.title{
+font-size:40px;
+text-align:center;
+margin-bottom:40px;
+text-shadow:0 0 20px #00f2ff;
+}
 
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+gap:20px;
+margin-top:30px;
+}
 
-@app.route("/")
-def home():
-    return render_template("index.html")
+.card{
+background:#0b0f1a;
+padding:20px;
+border:1px solid #00f2ff;
+border-radius:10px;
+}
 
+.card:hover{
+box-shadow:0 0 15px #00f2ff;
+}
 
-@app.route("/chat", methods=["POST"])
-def chat():
+textarea{
+width:100%;
+height:140px;
+background:#0b0f1a;
+color:white;
+border:1px solid #00f2ff;
+padding:15px;
+}
 
-    data = request.json
-    prompt = data.get("prompt")
+button{
+margin-top:15px;
+padding:10px 20px;
+background:#00f2ff;
+border:none;
+cursor:pointer;
+}
 
-    try:
+.result{
+margin-top:30px;
+padding:20px;
+background:#0b0f1a;
+border:1px solid #00f2ff;
+min-height:120px;
+}
 
-        result = asyncio.run(run_llm(prompt))
+</style>
 
-        return jsonify({"response": result})
+</head>
 
-    except Exception as e:
+<body>
 
-        return jsonify({"error": str(e)})
+<div class="container">
 
+<div class="title">
+OpenGradient Intelligence Terminal
+</div>
 
-if __name__ == "__main__":
-    app.run()
+<h2>AI Playground</h2>
+
+<textarea id="prompt">
+Explain zero knowledge proofs simply
+</textarea>
+
+<br>
+
+<button onclick="runModel()">Run Model</button>
+
+<div class="result" id="result">
+Model output...
+</div>
+
+<h2>Model Hub Explorer</h2>
+
+<button onclick="loadModels()">Load Models</button>
+
+<div class="grid" id="models"></div>
+
+</div>
+
+<script>
+
+async function runModel(){
+
+const prompt = document.getElementById("prompt").value
+
+const res = await fetch("/chat",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({prompt})
+})
+
+const data = await res.json()
+
+document.getElementById("result").innerText =
+data.response || data.error
+
+}
+
+async function loadModels(){
+
+const res = await fetch("/models")
+
+const models = await res.json()
+
+const grid = document.getElementById("models")
+
+grid.innerHTML=""
+
+models.forEach(m=>{
+
+const el = document.createElement("div")
+
+el.className="card"
+
+el.innerText=m
+
+grid.appendChild(el)
+
+})
+
+}
+
+</script>
+
+</body>
+
+</html>
