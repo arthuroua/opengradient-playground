@@ -1,3 +1,5 @@
 flask
 gunicorn
 opengradient
+web3
+eth-account
