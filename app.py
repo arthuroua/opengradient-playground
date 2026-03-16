@@ -10,14 +10,8 @@ PRIVATE_KEY = os.environ.get("OG_PRIVATE_KEY")
 llm = og.LLM(private_key=PRIVATE_KEY)
 
 
-async def run_llm(prompt):
-
-    response = await llm.chat(
-        model="openai/gpt-4o",
-        messages=[{"role": "user", "content": prompt}]
-    )
-
-    return response["choices"][0]["message"]["content"]
+def run_async(coro):
+    return asyncio.get_event_loop().run_until_complete(coro)
 
 
 @app.route("/")
@@ -33,9 +27,16 @@ def chat():
 
     try:
 
-        result = asyncio.run(run_llm(prompt))
+        result = run_async(
+            llm.chat(
+                model="openai/gpt-4o",
+                messages=[{"role":"user","content":prompt}]
+            )
+        )
 
-        return jsonify({"response": result})
+        text = result["choices"][0]["message"]["content"]
+
+        return jsonify({"response": text})
 
     except Exception as e:
 
