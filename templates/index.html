@@ -47,10 +47,6 @@ cursor:pointer;
 box-shadow:0 0 10px #00f2ff;
 }
 
-button:hover{
-box-shadow:0 0 25px #00f2ff;
-}
-
 textarea{
 width:100%;
 height:140px;
@@ -69,7 +65,7 @@ min-height:120px;
 }
 
 #graph{
-height:400px;
+height:350px;
 border:1px solid #00f2ff;
 }
 
@@ -87,8 +83,13 @@ OpenGradient Neon AI Terminal
 
 <div class="panel">
 
-<div id="wallet">Wallet: not connected</div>
-<div id="balance">Balance: -</div>
+<div id="wallet">
+Wallet: not connected
+</div>
+
+<div id="balance">
+Balance: -
+</div>
 
 <button onclick="connect()">Connect Wallet</button>
 <button onclick="disconnect()">Disconnect</button>
@@ -153,13 +154,16 @@ alert("Install MetaMask")
 return
 }
 
-const accounts = await window.ethereum.request({
+const accounts =
+await window.ethereum.request({
 method:"eth_requestAccounts"
 })
 
 account = accounts[0]
 
-provider = new ethers.providers.Web3Provider(window.ethereum)
+provider =
+new ethers.providers.Web3Provider(window.ethereum)
+
 signer = provider.getSigner()
 
 document.getElementById("wallet").innerText =
@@ -175,7 +179,8 @@ account=null
 provider=null
 signer=null
 
-document.getElementById("wallet").innerText="Wallet: disconnected"
+document.getElementById("wallet").innerText=
+"Wallet: disconnected"
 
 }
 
@@ -210,8 +215,10 @@ document.getElementById("balance").innerText =
 async function approve(){
 
 if(!signer){
+
 alert("Connect wallet first")
 return
+
 }
 
 const token =
@@ -247,7 +254,8 @@ headers:{
 body:JSON.stringify({prompt})
 })
 
-const data = await res.json()
+const data =
+await res.json()
 
 document.getElementById("result").innerText =
 data.response || data.error
@@ -255,41 +263,39 @@ data.response || data.error
 }
 
 function getETH(){
-window.open("https://www.coinbase.com/faucets/base-sepolia-faucet")
+
+window.open(
+"https://www.coinbase.com/faucets/base-sepolia-faucet"
+)
+
 }
 
 function getOPG(){
-window.open("https://hub.opengradient.ai/faucet")
+
+window.open(
+"https://hub.opengradient.ai/faucet"
+)
+
 }
 
 </script>
 
 <script>
 
-const models = [
-"gpt-4o",
-"gemini-2.5-pro",
-"claude-3.7-sonnet",
-"grok-4-fast",
-"o4-mini",
-"gemini-2.5-flash"
-]
-
 const scene = new THREE.Scene()
-const camera = new THREE.PerspectiveCamera(75,window.innerWidth/400,0.1,1000)
+const camera = new THREE.PerspectiveCamera(75,window.innerWidth/350,0.1,1000)
 const renderer = new THREE.WebGLRenderer()
 
-renderer.setSize(window.innerWidth,400)
+renderer.setSize(window.innerWidth,350)
 document.getElementById("graph").appendChild(renderer.domElement)
 
 camera.position.z = 5
 
-const nodes=[]
-
-models.forEach((m,i)=>{
-
 const geometry = new THREE.SphereGeometry(0.2)
 const material = new THREE.MeshBasicMaterial({color:0x00ffff})
+
+for(let i=0;i<8;i++){
+
 const sphere = new THREE.Mesh(geometry,material)
 
 sphere.position.x = Math.sin(i)*2
@@ -297,18 +303,13 @@ sphere.position.y = Math.cos(i)*2
 
 scene.add(sphere)
 
-nodes.push(sphere)
-
-})
+}
 
 function animate(){
 
 requestAnimationFrame(animate)
 
-nodes.forEach((n,i)=>{
-n.rotation.x +=0.01
-n.rotation.y +=0.01
-})
+scene.rotation.y +=0.005
 
 renderer.render(scene,camera)
 
