@@ -107,7 +107,7 @@ Balance: -
 <h3>AI Playground</h3>
 
 <textarea id="prompt">
-Explain zero knowledge proofs simply
+What is OpenGradient in one sentence?
 </textarea>
 
 <br>
@@ -144,8 +144,28 @@ const OPG =
 const PERMIT2 =
 "0x000000000022D473030F116dDEE9F6B43aC78BA3"
 
+const BASE_SEPOLIA =
+"0x14a34"
+
 function log(msg){
 document.getElementById("log").innerText = msg
+}
+
+async function ensureBaseSepolia(){
+
+const chainId = await window.ethereum.request({
+method:"eth_chainId"
+})
+
+if(chainId !== BASE_SEPOLIA){
+
+await window.ethereum.request({
+method:"wallet_switchEthereumChain",
+params:[{ chainId:BASE_SEPOLIA }]
+})
+
+}
+
 }
 
 async function connect(){
@@ -209,25 +229,14 @@ await provider.getBalance(account)
 const eth =
 ethers.utils.formatEther(ethBal)
 
-const token =
-new ethers.Contract(
-OPG,
-["function balanceOf(address owner) view returns(uint256)"],
-provider
-)
-
-const raw =
-await token.balanceOf(account)
-
-const opg =
-ethers.utils.formatUnits(raw,18)
-
 document.getElementById("balance").innerText =
-"ETH: "+eth+" | OPG: "+opg
+"ETH: "+eth
 
 }
 
 async function approve(){
+
+await ensureBaseSepolia()
 
 if(!signer){
 alert("Connect wallet first")
@@ -261,6 +270,8 @@ log("OPG approved")
 
 async function runModel(){
 
+await ensureBaseSepolia()
+
 const prompt =
 document.getElementById("prompt").value
 
@@ -273,7 +284,8 @@ headers:{
 body:JSON.stringify({prompt})
 })
 
-const data = await res.json()
+const data =
+await res.json()
 
 document.getElementById("result").innerText =
 data.response || data.error
