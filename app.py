@@ -7,16 +7,13 @@ app = Flask(__name__)
 
 PRIVATE_KEY = os.environ.get("OG_PRIVATE_KEY")
 
-llm = og.LLM(
-    private_key=PRIVATE_KEY,
-    base_url="http://3.15.214.21"
-)
+llm = og.LLM(private_key=PRIVATE_KEY)
 
 async def run_llm(prompt):
 
     response = await llm.chat(
         model="openai/gpt-4o",
-        messages=[{"role":"user","content":prompt}]
+        messages=[{"role": "user", "content": prompt}]
     )
 
     return response["choices"][0]["message"]["content"]
