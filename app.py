@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, render_template
-import opengradient as og
 import asyncio
+import opengradient as og
 import os
 
 app = Flask(__name__)
@@ -13,8 +13,13 @@ llm = og.LLM(private_key=PRIVATE_KEY)
 async def run_llm(prompt):
 
     response = await llm.chat(
-        model="Meta-Llama-3-8B-Instruct",
-        messages=[{"role": "user", "content": prompt}]
+        model="meta/Meta-Llama-3-8B-Instruct",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
     )
 
     return response
