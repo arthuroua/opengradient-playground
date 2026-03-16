@@ -2,65 +2,101 @@
 <html>
 
 <head>
-<title>OpenGradient Intelligence Terminal</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+<title>OpenGradient Neon AI Terminal</title>
 
 <style>
 
 body{
-background:#04060c;
-color:#00f2ff;
+background:#03040a;
 font-family:monospace;
+color:#00f2ff;
 margin:0;
 }
 
 .container{
-max-width:1100px;
+max-width:1000px;
 margin:auto;
-padding:40px;
+padding:50px;
 }
 
 .title{
-font-size:40px;
+font-size:44px;
 text-align:center;
 margin-bottom:40px;
-text-shadow:0 0 20px #00f2ff;
+text-shadow:0 0 25px #00f2ff;
 }
 
-button{
-padding:10px 20px;
-margin:5px;
-background:#00f2ff;
-border:none;
-cursor:pointer;
-box-shadow:0 0 10px #00f2ff;
+.panel{
+background:#0b0f1a;
+border:1px solid #00f2ff;
+border-radius:10px;
+padding:25px;
+margin-bottom:30px;
 }
 
 textarea{
 width:100%;
-height:140px;
+height:150px;
 background:#0b0f1a;
 color:white;
 border:1px solid #00f2ff;
 padding:15px;
+font-size:16px;
+border-radius:6px;
+}
+
+button{
+margin-top:15px;
+margin-right:10px;
+padding:12px 22px;
+background:#00f2ff;
+border:none;
+cursor:pointer;
+border-radius:6px;
+box-shadow:0 0 12px #00f2ff;
+}
+
+button:hover{
+box-shadow:0 0 30px #00f2ff;
 }
 
 .result{
 margin-top:20px;
 background:#0b0f1a;
 padding:20px;
+border-radius:10px;
 border:1px solid #00f2ff;
 min-height:120px;
+color:white;
 }
 
 .log{
-margin-top:20px;
+margin-top:15px;
 font-size:14px;
 color:#7aa2c9;
 }
 
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+gap:15px;
+margin-top:15px;
+}
+
+.card{
+background:#0b0f1a;
+padding:15px;
+border:1px solid #00f2ff;
+border-radius:8px;
+}
+
+.card:hover{
+box-shadow:0 0 20px #00f2ff;
+}
+
 </style>
+
 </head>
 
 <body>
@@ -68,29 +104,34 @@ color:#7aa2c9;
 <div class="container">
 
 <div class="title">
-OpenGradient Intelligence Terminal
+OpenGradient Neon AI Terminal
 </div>
 
-<div id="wallet">
-Wallet: not connected
+<div class="panel">
+
+<h3>💧 Testnet Faucet</h3>
+
+<button onclick="getETH()">Get Base Sepolia ETH</button>
+<button onclick="getOPG()">Get OPG Tokens</button>
+
 </div>
 
-<button onclick="connect()">Connect Wallet</button>
-<button onclick="disconnect()">Disconnect</button>
-<button onclick="approve()">Approve OPG</button>
+<div class="panel">
 
-<h3>AI Playground</h3>
+<h3>🧠 AI Playground</h3>
 
 <textarea id="prompt">
-What is OpenGradient in one sentence?
+Explain zero knowledge proofs simply
 </textarea>
 
 <br>
 
 <button onclick="runModel()">Run Model</button>
+<button onclick="copy()">Copy</button>
+<button onclick="clearOutput()">Clear</button>
 
 <div class="result" id="result">
-Model output...
+Model output will appear here...
 </div>
 
 <div class="log" id="log">
@@ -99,139 +140,39 @@ Logs...
 
 </div>
 
+<div class="panel">
+
+<h3>🧭 Model Explorer</h3>
+
+<div class="grid">
+
+<div class="card">openai/gpt-4o</div>
+<div class="card">google/gemini-2.5-pro</div>
+<div class="card">anthropic/claude-3.7-sonnet</div>
+<div class="card">x-ai/grok-4-fast</div>
+<div class="card">openai/o4-mini</div>
+<div class="card">google/gemini-2.5-flash</div>
+
+</div>
+
+</div>
+
+</div>
+
 <script>
-
-let provider
-let signer
-let account
-
-const BASE_SEPOLIA = "0x14A34"
-
-const OPG =
-"0x240b09731D96979f50B2C649C9CE10FcF9C7987F"
-
-const PERMIT2 =
-"0x000000000022D473030F116dDEE9F6B43aC78BA3"
 
 function log(msg){
 document.getElementById("log").innerText = msg
 }
 
-async function ensureNetwork(){
-
-let chainId = await window.ethereum.request({
-method:"eth_chainId"
-})
-
-if(chainId !== BASE_SEPOLIA){
-
-try{
-
-await window.ethereum.request({
-method:"wallet_switchEthereumChain",
-params:[{ chainId: BASE_SEPOLIA }]
-})
-
-}catch(e){
-
-await window.ethereum.request({
-method:"wallet_addEthereumChain",
-params:[{
-chainId: BASE_SEPOLIA,
-chainName:"Base Sepolia",
-rpcUrls:["https://sepolia.base.org"],
-nativeCurrency:{
-name:"ETH",
-symbol:"ETH",
-decimals:18
-},
-blockExplorerUrls:["https://sepolia.basescan.org"]
-}]
-})
-
-}
-
-}
-
-}
-
-async function connect(){
-
-if(!window.ethereum){
-alert("Install MetaMask")
-return
-}
-
-await ensureNetwork()
-
-provider = new ethers.providers.Web3Provider(window.ethereum)
-
-await provider.send("eth_requestAccounts", [])
-
-signer = provider.getSigner()
-
-account = await signer.getAddress()
-
-document.getElementById("wallet").innerText =
-"Wallet: " + account
-
-log("Wallet connected")
-
-}
-
-function disconnect(){
-
-provider=null
-signer=null
-account=null
-
-document.getElementById("wallet").innerText =
-"Wallet: disconnected"
-
-log("Wallet disconnected")
-
-}
-
-async function approve(){
-
-await ensureNetwork()
-
-if(!signer){
-alert("Connect wallet first")
-return
-}
-
-const token =
-new ethers.Contract(
-OPG,
-[
-"function approve(address spender,uint256 amount) public returns(bool)"
-],
-signer
-)
-
-const amount =
-ethers.utils.parseUnits("1000",18)
-
-log("Sending approval...")
-
-const tx =
-await token.approve(PERMIT2, amount)
-
-log("TX: " + tx.hash)
-
-await tx.wait()
-
-log("OPG approved")
-
-}
-
 async function runModel(){
 
-await ensureNetwork()
+log("Sending request...")
 
 const prompt =
 document.getElementById("prompt").value
+
+try{
 
 const res =
 await fetch("/chat",{
@@ -242,11 +183,59 @@ headers:{
 body:JSON.stringify({prompt})
 })
 
-const data =
-await res.json()
+const data = await res.json()
 
 document.getElementById("result").innerText =
 data.response || data.error
+
+log("Response received")
+
+}catch(e){
+
+log("Error: "+e)
+
+}
+
+}
+
+function copy(){
+
+const text =
+document.getElementById("result").innerText
+
+navigator.clipboard.writeText(text)
+
+log("Copied to clipboard")
+
+}
+
+function clearOutput(){
+
+document.getElementById("result").innerText=""
+
+log("Output cleared")
+
+}
+
+function getETH(){
+
+window.open(
+"https://www.coinbase.com/faucets/base-sepolia-faucet",
+"_blank"
+)
+
+log("Opened ETH faucet")
+
+}
+
+function getOPG(){
+
+window.open(
+"https://hub.opengradient.ai/faucet",
+"_blank"
+)
+
+log("Opened OPG faucet")
 
 }
 
