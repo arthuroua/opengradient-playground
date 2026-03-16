@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, request, jsonify, render_template
 import asyncio
 import os
 import opengradient as og
@@ -40,3 +40,19 @@ def chat():
     except Exception as e:
 
         return jsonify({"error": str(e)})
+
+
+@app.route("/models")
+def models():
+
+    models = [
+        "meta/Meta-Llama-3-8B-Instruct",
+        "opengradient/ETH_Volatility_Oracle",
+        "opengradient/Crypto_Sentiment_AI"
+    ]
+
+    return jsonify(models)
+
+
+if __name__ == "__main__":
+    app.run()
