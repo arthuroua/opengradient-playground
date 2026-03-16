@@ -5,6 +5,8 @@
 
 <title>OpenGradient Neon AI Terminal</title>
 
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+
 <style>
 
 body{
@@ -21,7 +23,7 @@ padding:50px;
 }
 
 .title{
-font-size:44px;
+font-size:42px;
 text-align:center;
 margin-bottom:40px;
 text-shadow:0 0 25px #00f2ff;
@@ -35,6 +37,19 @@ padding:25px;
 margin-bottom:30px;
 }
 
+button{
+padding:10px 20px;
+margin:5px;
+background:#00f2ff;
+border:none;
+cursor:pointer;
+box-shadow:0 0 10px #00f2ff;
+}
+
+button:hover{
+box-shadow:0 0 25px #00f2ff;
+}
+
 textarea{
 width:100%;
 height:150px;
@@ -42,33 +57,14 @@ background:#0b0f1a;
 color:white;
 border:1px solid #00f2ff;
 padding:15px;
-font-size:16px;
-border-radius:6px;
-}
-
-button{
-margin-top:15px;
-margin-right:10px;
-padding:12px 22px;
-background:#00f2ff;
-border:none;
-cursor:pointer;
-border-radius:6px;
-box-shadow:0 0 12px #00f2ff;
-}
-
-button:hover{
-box-shadow:0 0 30px #00f2ff;
 }
 
 .result{
 margin-top:20px;
 background:#0b0f1a;
 padding:20px;
-border-radius:10px;
 border:1px solid #00f2ff;
 min-height:120px;
-color:white;
 }
 
 .log{
@@ -77,22 +73,8 @@ font-size:14px;
 color:#7aa2c9;
 }
 
-.grid{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-gap:15px;
-margin-top:15px;
-}
-
-.card{
-background:#0b0f1a;
-padding:15px;
-border:1px solid #00f2ff;
-border-radius:8px;
-}
-
-.card:hover{
-box-shadow:0 0 20px #00f2ff;
+.wallet{
+margin-bottom:10px;
 }
 
 </style>
@@ -109,7 +91,24 @@ OpenGradient Neon AI Terminal
 
 <div class="panel">
 
-<h3>💧 Testnet Faucet</h3>
+<div class="wallet" id="wallet">
+Wallet: not connected
+</div>
+
+<div id="balance">
+Balance: -
+</div>
+
+<button onclick="connect()">Connect Wallet</button>
+<button onclick="disconnect()">Disconnect</button>
+<button onclick="loadBalance()">Refresh Balance</button>
+<button onclick="approve()">Approve OPG</button>
+
+</div>
+
+<div class="panel">
+
+<h3>💧 Faucet</h3>
 
 <button onclick="getETH()">Get Base Sepolia ETH</button>
 <button onclick="getOPG()">Get OPG Tokens</button>
@@ -118,7 +117,7 @@ OpenGradient Neon AI Terminal
 
 <div class="panel">
 
-<h3>🧠 AI Playground</h3>
+<h3>AI Playground</h3>
 
 <textarea id="prompt">
 Explain zero knowledge proofs simply
@@ -131,7 +130,7 @@ Explain zero knowledge proofs simply
 <button onclick="clearOutput()">Clear</button>
 
 <div class="result" id="result">
-Model output will appear here...
+Model output...
 </div>
 
 <div class="log" id="log">
@@ -140,39 +139,136 @@ Logs...
 
 </div>
 
-<div class="panel">
-
-<h3>🧭 Model Explorer</h3>
-
-<div class="grid">
-
-<div class="card">openai/gpt-4o</div>
-<div class="card">google/gemini-2.5-pro</div>
-<div class="card">anthropic/claude-3.7-sonnet</div>
-<div class="card">x-ai/grok-4-fast</div>
-<div class="card">openai/o4-mini</div>
-<div class="card">google/gemini-2.5-flash</div>
-
-</div>
-
-</div>
-
 </div>
 
 <script>
+
+let provider
+let signer
+let account
+
+const OPG =
+"0x240b09731D96979f50B2C649C9CE10FcF9C7987F"
+
+const PERMIT2 =
+"0x000000000022D473030F116dDEE9F6B43aC78BA3"
 
 function log(msg){
 document.getElementById("log").innerText = msg
 }
 
-async function runModel(){
+async function connect(){
 
-log("Sending request...")
+if(!window.ethereum){
+
+alert("Install MetaMask")
+return
+
+}
+
+const accounts =
+await window.ethereum.request({
+method:"eth_requestAccounts"
+})
+
+account = accounts[0]
+
+provider =
+new ethers.providers.Web3Provider(window.ethereum)
+
+signer = provider.getSigner()
+
+document.getElementById("wallet").innerText =
+"Wallet: " + account
+
+log("Wallet connected")
+
+await loadBalance()
+
+}
+
+function disconnect(){
+
+provider=null
+signer=null
+account=null
+
+document.getElementById("wallet").innerText =
+"Wallet: disconnected"
+
+document.getElementById("balance").innerText =
+"Balance: -"
+
+log("Wallet disconnected")
+
+}
+
+async function loadBalance(){
+
+if(!provider) return
+
+const ethBalance =
+await provider.getBalance(account)
+
+const eth =
+ethers.utils.formatEther(ethBalance)
+
+const token =
+new ethers.Contract(
+OPG,
+["function balanceOf(address owner) view returns(uint256)"],
+provider
+)
+
+const raw =
+await token.balanceOf(account)
+
+const opg =
+ethers.utils.formatUnits(raw,18)
+
+document.getElementById("balance").innerText =
+"ETH: "+eth+" | OPG: "+opg
+
+}
+
+async function approve(){
+
+if(!signer){
+
+alert("Connect wallet first")
+return
+
+}
+
+const token =
+new ethers.Contract(
+OPG,
+[
+"function approve(address spender,uint256 amount) public returns(bool)"
+],
+signer
+)
+
+const amount =
+ethers.utils.parseUnits("1000",18)
+
+log("Sending approval...")
+
+const tx =
+await token.approve(PERMIT2, amount)
+
+log("TX: "+tx.hash)
+
+await tx.wait()
+
+log("Approval confirmed")
+
+}
+
+async function runModel(){
 
 const prompt =
 document.getElementById("prompt").value
-
-try{
 
 const res =
 await fetch("/chat",{
@@ -183,18 +279,11 @@ headers:{
 body:JSON.stringify({prompt})
 })
 
-const data = await res.json()
+const data =
+await res.json()
 
 document.getElementById("result").innerText =
 data.response || data.error
-
-log("Response received")
-
-}catch(e){
-
-log("Error: "+e)
-
-}
 
 }
 
@@ -224,8 +313,6 @@ window.open(
 "_blank"
 )
 
-log("Opened ETH faucet")
-
 }
 
 function getOPG(){
@@ -234,8 +321,6 @@ window.open(
 "https://hub.opengradient.ai/faucet",
 "_blank"
 )
-
-log("Opened OPG faucet")
 
 }
 
