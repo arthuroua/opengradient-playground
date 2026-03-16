@@ -89,9 +89,9 @@ Explain zero knowledge proofs simply
 
 <br>
 
+<button onclick="connect()">Connect Wallet</button>
+<button onclick="approve()">Approve OPG</button>
 <button onclick="runModel()">Run Model</button>
-
-  <button onclick="approve()">Approve OPG</button>
 
 <div class="result" id="result">
 Model output will appear here...
@@ -169,6 +169,22 @@ await tx.wait()
 
 document.getElementById("log").innerText =
 "Approval confirmed"
+}
+
+  async function connect(){
+
+if(!window.ethereum){
+alert("Install MetaMask")
+return
+}
+
+const accounts = await ethereum.request({
+method:"eth_requestAccounts"
+})
+
+document.getElementById("log").innerText =
+"Connected: "+accounts[0]
+
 }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
