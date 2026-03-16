@@ -23,12 +23,23 @@ async def run_llm(prompt):
 @app.route("/chat", methods=["POST"])
 def chat():
 
-    data = request.json
-    prompt = data["prompt"]
+    try:
 
-    result = asyncio.run(run_llm(prompt))
+        data = request.get_json()
 
-    return jsonify({"response": str(result)})
+        prompt = data.get("prompt","")
+
+        result = asyncio.run(run_llm(prompt))
+
+        return jsonify({
+            "response": str(result)
+        })
+
+    except Exception as e:
+
+        return jsonify({
+            "error": str(e)
+        }), 500
 
 
 @app.route("/")
