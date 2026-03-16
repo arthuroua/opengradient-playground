@@ -1,17 +1,10 @@
 from flask import Flask, request, jsonify, render_template
-import asyncio
-import os
-import opengradient as og
+import requests
 
 app = Flask(__name__)
 
-PRIVATE_KEY = os.environ.get("OG_PRIVATE_KEY")
 
-llm = og.LLM(private_key=PRIVATE_KEY)
-
-
-def run_async(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
+LLM_ENDPOINT = "http://3.15.214.21/v1/chat/completions"
 
 
 @app.route("/")
@@ -25,14 +18,21 @@ def chat():
     data = request.json
     prompt = data.get("prompt")
 
+    payload = {
+        "model": "openai/gpt-4o",
+        "messages": [
+            {"role": "user", "content": prompt}
+        ]
+    }
+
     try:
 
-        result = run_async(
-            llm.chat(
-                model="openai/gpt-4o",
-                messages=[{"role":"user","content":prompt}]
-            )
+        r = requests.post(
+            LLM_ENDPOINT,
+            json=payload
         )
+
+        result = r.json()
 
         text = result["choices"][0]["message"]["content"]
 
