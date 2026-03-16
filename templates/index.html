@@ -5,15 +5,15 @@
 
 <title>OpenGradient Neon AI Terminal</title>
 
-<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<!-- ethers -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 
 <style>
 
 body{
 background:#03040a;
-font-family:monospace;
 color:#00f2ff;
+font-family:monospace;
 margin:0;
 }
 
@@ -62,11 +62,6 @@ background:#0b0f1a;
 padding:20px;
 border:1px solid #00f2ff;
 min-height:120px;
-}
-
-#graph{
-height:350px;
-border:1px solid #00f2ff;
 }
 
 </style>
@@ -125,14 +120,6 @@ Model output...
 
 </div>
 
-<div class="panel">
-
-<h3>🌐 AI Model Network</h3>
-
-<div id="graph"></div>
-
-</div>
-
 </div>
 
 <script>
@@ -140,6 +127,8 @@ Model output...
 let provider
 let signer
 let account
+
+const BASE_SEPOLIA = "0x14A34"
 
 const OPG =
 "0x240b09731D96979f50B2C649C9CE10FcF9C7987F"
@@ -150,24 +139,23 @@ const PERMIT2 =
 async function connect(){
 
 if(!window.ethereum){
+
 alert("Install MetaMask")
 return
+
 }
-
-const accounts =
-await window.ethereum.request({
-method:"eth_requestAccounts"
-})
-
-account = accounts[0]
 
 provider =
 new ethers.providers.Web3Provider(window.ethereum)
 
+await provider.send("eth_requestAccounts", [])
+
 signer = provider.getSigner()
 
+account = await signer.getAddress()
+
 document.getElementById("wallet").innerText =
-"Wallet: "+account
+"Wallet: " + account
 
 await loadBalance()
 
@@ -175,12 +163,15 @@ await loadBalance()
 
 function disconnect(){
 
-account=null
 provider=null
 signer=null
+account=null
 
-document.getElementById("wallet").innerText=
+document.getElementById("wallet").innerText =
 "Wallet: disconnected"
+
+document.getElementById("balance").innerText =
+"Balance: -"
 
 }
 
@@ -234,6 +225,8 @@ ethers.utils.parseUnits("1000",18)
 const tx =
 await token.approve(PERMIT2, amount)
 
+alert("TX sent: "+tx.hash)
+
 await tx.wait()
 
 alert("Approve confirmed")
@@ -277,45 +270,6 @@ window.open(
 )
 
 }
-
-</script>
-
-<script>
-
-const scene = new THREE.Scene()
-const camera = new THREE.PerspectiveCamera(75,window.innerWidth/350,0.1,1000)
-const renderer = new THREE.WebGLRenderer()
-
-renderer.setSize(window.innerWidth,350)
-document.getElementById("graph").appendChild(renderer.domElement)
-
-camera.position.z = 5
-
-const geometry = new THREE.SphereGeometry(0.2)
-const material = new THREE.MeshBasicMaterial({color:0x00ffff})
-
-for(let i=0;i<8;i++){
-
-const sphere = new THREE.Mesh(geometry,material)
-
-sphere.position.x = Math.sin(i)*2
-sphere.position.y = Math.cos(i)*2
-
-scene.add(sphere)
-
-}
-
-function animate(){
-
-requestAnimationFrame(animate)
-
-scene.rotation.y +=0.005
-
-renderer.render(scene,camera)
-
-}
-
-animate()
 
 </script>
 
