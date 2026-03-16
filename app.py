@@ -5,25 +5,22 @@ import opengradient as og
 
 app = Flask(__name__)
 
-PRIVATE_KEY = os.environ.get("PRIVATE_KEY")
+PRIVATE_KEY = os.environ.get("OG_PRIVATE_KEY")
+
+# LLM endpoint (якщо DNS падає, можна тимчасово поставити IP)
+BASE_URL = os.environ.get("OG_LLM_BASE_URL", "https://llm.opengradient.ai")
 
 llm = og.LLM(
-    private_key=PRIVATE_KEY
+    private_key=PRIVATE_KEY,
+    base_url=BASE_URL
 )
 
 async def run_llm(prompt):
-
     response = await llm.chat(
-        model="meta-llama/Meta-Llama-3-8B-Instruct",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
+        model="openai/gpt-4o",
+        messages=[{"role": "user", "content": prompt}]
     )
-
-    return response
+    return response["choices"][0]["message"]["content"]
 
 @app.route("/")
 def home():
@@ -31,23 +28,14 @@ def home():
 
 @app.route("/chat", methods=["POST"])
 def chat():
-
     data = request.json
     prompt = data.get("prompt")
 
     try:
-
         result = asyncio.run(run_llm(prompt))
-
-        return jsonify({
-            "response": str(result)
-        })
-
+        return jsonify({"response": result})
     except Exception as e:
-
-        return jsonify({
-            "error": str(e)
-        })
+        return jsonify({"error": str(e)})
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+    app.run()
