@@ -2,7 +2,6 @@
 <html>
 
 <head>
-
 <title>OpenGradient Intelligence Terminal</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
@@ -55,19 +54,6 @@ border:1px solid #00f2ff;
 min-height:120px;
 }
 
-.grid{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-gap:20px;
-margin-top:20px;
-}
-
-.card{
-background:#0b0f1a;
-padding:15px;
-border:1px solid #00f2ff;
-}
-
 .log{
 margin-top:20px;
 font-size:14px;
@@ -75,7 +61,6 @@ color:#7aa2c9;
 }
 
 </style>
-
 </head>
 
 <body>
@@ -90,19 +75,9 @@ OpenGradient Intelligence Terminal
 Wallet: not connected
 </div>
 
-<div id="balance">
-Balance: -
-</div>
-
 <button onclick="connect()">Connect Wallet</button>
 <button onclick="disconnect()">Disconnect</button>
 <button onclick="approve()">Approve OPG</button>
-<button onclick="refreshBalance()">Refresh Balance</button>
-
-<h3>Testnet Faucet</h3>
-
-<button onclick="getETH()">Get ETH</button>
-<button onclick="getOPG()">Get OPG</button>
 
 <h3>AI Playground</h3>
 
@@ -113,18 +88,10 @@ What is OpenGradient in one sentence?
 <br>
 
 <button onclick="runModel()">Run Model</button>
-<button onclick="copy()">Copy</button>
-<button onclick="clearOutput()">Clear</button>
 
 <div class="result" id="result">
 Model output...
 </div>
-
-<h3>Model Hub Explorer</h3>
-
-<button onclick="loadModels()">Load Models</button>
-
-<div class="grid" id="models"></div>
 
 <div class="log" id="log">
 Logs...
@@ -138,31 +105,51 @@ let provider
 let signer
 let account
 
+const BASE_SEPOLIA = "0x14A34"
+
 const OPG =
 "0x240b09731D96979f50B2C649C9CE10FcF9C7987F"
 
 const PERMIT2 =
 "0x000000000022D473030F116dDEE9F6B43aC78BA3"
 
-const BASE_SEPOLIA =
-"0x14a34"
-
 function log(msg){
 document.getElementById("log").innerText = msg
 }
 
-async function ensureBaseSepolia(){
+async function ensureNetwork(){
 
-const chainId = await window.ethereum.request({
+let chainId = await window.ethereum.request({
 method:"eth_chainId"
 })
 
 if(chainId !== BASE_SEPOLIA){
 
+try{
+
 await window.ethereum.request({
 method:"wallet_switchEthereumChain",
-params:[{ chainId:BASE_SEPOLIA }]
+params:[{ chainId: BASE_SEPOLIA }]
 })
+
+}catch(e){
+
+await window.ethereum.request({
+method:"wallet_addEthereumChain",
+params:[{
+chainId: BASE_SEPOLIA,
+chainName:"Base Sepolia",
+rpcUrls:["https://sepolia.base.org"],
+nativeCurrency:{
+name:"ETH",
+symbol:"ETH",
+decimals:18
+},
+blockExplorerUrls:["https://sepolia.basescan.org"]
+}]
+})
+
+}
 
 }
 
@@ -175,32 +162,20 @@ alert("Install MetaMask")
 return
 }
 
-let eth = window.ethereum
+await ensureNetwork()
 
-if(window.ethereum.providers){
+provider = new ethers.providers.Web3Provider(window.ethereum)
 
-eth = window.ethereum.providers.find(
-p => p.isMetaMask
-) || window.ethereum
-
-}
-
-provider = new ethers.providers.Web3Provider(eth)
-
-await eth.request({
-method:"eth_requestAccounts"
-})
+await provider.send("eth_requestAccounts", [])
 
 signer = provider.getSigner()
 
 account = await signer.getAddress()
 
 document.getElementById("wallet").innerText =
-"Wallet: "+account
+"Wallet: " + account
 
 log("Wallet connected")
-
-refreshBalance()
 
 }
 
@@ -213,30 +188,13 @@ account=null
 document.getElementById("wallet").innerText =
 "Wallet: disconnected"
 
-document.getElementById("balance").innerText="Balance: -"
-
 log("Wallet disconnected")
-
-}
-
-async function refreshBalance(){
-
-if(!provider) return
-
-const ethBal =
-await provider.getBalance(account)
-
-const eth =
-ethers.utils.formatEther(ethBal)
-
-document.getElementById("balance").innerText =
-"ETH: "+eth
 
 }
 
 async function approve(){
 
-await ensureBaseSepolia()
+await ensureNetwork()
 
 if(!signer){
 alert("Connect wallet first")
@@ -260,7 +218,7 @@ log("Sending approval...")
 const tx =
 await token.approve(PERMIT2, amount)
 
-log("TX: "+tx.hash)
+log("TX: " + tx.hash)
 
 await tx.wait()
 
@@ -270,7 +228,7 @@ log("OPG approved")
 
 async function runModel(){
 
-await ensureBaseSepolia()
+await ensureNetwork()
 
 const prompt =
 document.getElementById("prompt").value
@@ -289,71 +247,6 @@ await res.json()
 
 document.getElementById("result").innerText =
 data.response || data.error
-
-}
-
-function copy(){
-
-const text =
-document.getElementById("result").innerText
-
-navigator.clipboard.writeText(text)
-
-log("Copied")
-
-}
-
-function clearOutput(){
-
-document.getElementById("result").innerText=""
-
-log("Output cleared")
-
-}
-
-function getETH(){
-
-window.open(
-"https://www.coinbase.com/faucets/base-sepolia-faucet",
-"_blank"
-)
-
-}
-
-function getOPG(){
-
-window.open(
-"https://hub.opengradient.ai/faucet",
-"_blank"
-)
-
-}
-
-async function loadModels(){
-
-const res =
-await fetch("/models")
-
-const models =
-await res.json()
-
-const grid =
-document.getElementById("models")
-
-grid.innerHTML=""
-
-models.forEach(m=>{
-
-const el =
-document.createElement("div")
-
-el.className="card"
-
-el.innerText=m
-
-grid.appendChild(el)
-
-})
 
 }
 
