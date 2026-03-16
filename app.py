@@ -44,7 +44,11 @@ def chat():
 
 @app.route("/")
 def home():
-    return open("index.html").read()
+from flask import render_template
+
+@app.route("/")
+def home():
+    return render_template("index.html")
 
 
 if __name__ == "__main__":
