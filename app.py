@@ -5,11 +5,7 @@ import opengradient as og
 
 app = Flask(__name__)
 
-# Private key з Railway
 PRIVATE_KEY = os.environ.get("OG_PRIVATE_KEY")
-
-# створюємо LLM client
-llm = og.LLM(private_key=PRIVATE_KEY)
 
 
 @app.route("/")
@@ -19,7 +15,9 @@ def index():
 
 async def run_model(prompt):
 
-    # великий approve щоб не ловити 402
+    # створюємо новий client кожен раз
+    llm = og.LLM(private_key=PRIVATE_KEY)
+
     llm.ensure_opg_approval(opg_amount=100)
 
     messages = [
