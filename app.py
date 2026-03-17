@@ -5,19 +5,22 @@ import opengradient as og
 
 app = Flask(__name__)
 
+# Private key з Railway
 PRIVATE_KEY = os.environ.get("OG_PRIVATE_KEY")
 
+# створюємо LLM client
 llm = og.LLM(private_key=PRIVATE_KEY)
 
 
 @app.route("/")
-def home():
+def index():
     return render_template("index.html")
 
 
-async def run_llm(prompt):
+async def run_model(prompt):
 
-    llm.ensure_opg_approval(opg_amount=0.1)
+    # великий approve щоб не ловити 402
+    llm.ensure_opg_approval(opg_amount=100)
 
     messages = [
         {"role": "user", "content": prompt}
@@ -27,7 +30,7 @@ async def run_llm(prompt):
         model=og.TEE_LLM.GEMINI_2_5_FLASH,
         messages=messages,
         max_tokens=200,
-        x402_settlement_mode=og.x402SettlementMode.INDIVIDUAL_FULL
+        x402_settlement_mode=og.x402SettlementMode.PRIVATE
     )
 
     return result.chat_output["content"]
@@ -41,10 +44,10 @@ def chat():
 
     try:
 
-        output = asyncio.run(run_llm(prompt))
+        response = asyncio.run(run_model(prompt))
 
         return jsonify({
-            "response": output
+            "response": response
         })
 
     except Exception as e:
