@@ -1,6 +1,6 @@
 import os
 import asyncio
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import opengradient as og
 
 app = Flask(__name__)
@@ -8,6 +8,12 @@ app = Flask(__name__)
 PRIVATE_KEY = os.environ.get("OG_PRIVATE_KEY")
 
 llm = og.LLM(private_key=PRIVATE_KEY)
+
+
+@app.route("/")
+def home():
+    return render_template("index.html")
+
 
 async def run_llm(prompt):
 
